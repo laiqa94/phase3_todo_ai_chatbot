@@ -11,9 +11,9 @@ export function TaskList({
   onDelete,
 }: {
   tasks: Task[];
-  onToggleComplete?: (taskId: string, nextCompleted: boolean) => void;
+  onToggleComplete?: (taskId: string | number, nextCompleted: boolean) => void;
   onEdit?: (task: Task) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete?: (taskId: string | number) => void;
 }) {
   if (tasks.length === 0) {
     return (
