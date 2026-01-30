@@ -231,16 +231,12 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
         }
       }
 
-      // Handle 404 errors for AI chat endpoints - only provide mock responses for known local development scenarios
+      // Handle 404 errors for AI chat endpoints - provide mock responses
       if (res.status === 404 && (transformedPath.includes('/api/v1/chat') || transformedPath.includes('/api/v1/') && transformedPath.includes('/chat'))) {
-        console.log(`Chat endpoint not found on backend - checking if this is a local development scenario for mock response eligibility`);
+        console.log(`Chat endpoint not found on backend - providing mock response`);
 
-        // Return mock responses in development mode for chat endpoints
-        if (isDevelopment()) {
-          console.log('Local development environment detected - providing mock response for chat endpoint');
-
-          // Handle mock data for chatbot endpoints when they're not available on backend in local dev
-          if (transformedPath.includes('/api/v1/chat') || transformedPath.includes('/chat')) {
+        // Handle mock data for chatbot endpoints when they're not available on backend
+        if (transformedPath.includes('/api/v1/chat') || transformedPath.includes('/chat')) {
             if (req.method === 'POST') {
               // Parse the request body to get the user's message
               let userMessage = '';
@@ -323,9 +319,10 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
               return NextResponse.json(mockResponseData, { status: 200 });
             }
           }
+        }
 
-          // Handle mock data for new_conversation endpoint when not available on backend
-          if (transformedPath.includes('/api/v1/new_conversation') || transformedPath.includes('/new_conversation')) {
+        // Handle mock data for new_conversation endpoint when not available on backend
+        if (transformedPath.includes('/api/v1/new_conversation') || transformedPath.includes('/new_conversation')) {
             if (req.method === 'POST') {
               // Mock for new conversation endpoint
               return NextResponse.json({
@@ -336,10 +333,10 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
                 message_id: Math.floor(Math.random() * 10000)
               }, { status: 200 });
             }
-          }
+        }
 
-          // Handle mock data for conversation history endpoint when not available on backend
-          if (transformedPath.includes('/api/v1/conversations/')) {
+        // Handle mock data for conversation history endpoint when not available on backend
+        if (transformedPath.includes('/api/v1/conversations/')) {
             if (req.method === 'GET') {
               // Mock for conversation history endpoint
               return NextResponse.json({
@@ -374,16 +371,6 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
               }, { status: 200 });
             }
           }
-        } else {
-          console.log(`Not in development mode - propagating 404 error to frontend`);
-          const contentType = res.headers.get("content-type") ?? "";
-          if (contentType.includes("application/json")) {
-            const json = await res.json().catch(() => ({}));
-            return NextResponse.json(json, { status: res.status });
-          }
-
-          const text = await res.text();
-          return new NextResponse(text, { status: res.status, headers: { "content-type": contentType } });
         }
       }
 
