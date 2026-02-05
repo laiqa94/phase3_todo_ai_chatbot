@@ -43,39 +43,39 @@ export default function DashboardPage() {
   const active = total - completed;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 min-h-screen bg-gray-100">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
         <p className="text-zinc-600">Overview of your tasks.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="text-sm text-zinc-600">Total</div>
-          <div className="text-3xl font-semibold">{total}</div>
+          <div className="text-3xl font-semibold text-blue-600">{total}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="text-sm text-zinc-600">Active</div>
-          <div className="text-3xl font-semibold">{active}</div>
+          <div className="text-3xl font-semibold text-orange-600">{active}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="text-sm text-zinc-600">Completed</div>
-          <div className="text-3xl font-semibold">{completed}</div>
+          <div className="text-3xl font-semibold text-green-600">{completed}</div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg border">
+      <div className="bg-white p-6 rounded-lg border shadow-sm">
         <h2 className="font-medium text-zinc-900">Quick actions</h2>
         <div className="mt-3 flex gap-3">
           <Link
             href="/tasks"
-            className="bg-zinc-900 text-white px-4 py-2 rounded-md hover:bg-zinc-800"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
           >
             View tasks
           </Link>
           <Link
             href="/tasks?compose=1"
-            className="border border-zinc-200 px-4 py-2 rounded-md hover:bg-zinc-50"
+            className="border border-zinc-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
           >
             Add task
           </Link>
