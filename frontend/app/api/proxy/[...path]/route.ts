@@ -7,7 +7,9 @@ function isDevelopment() {
 
 function baseUrl() {
   const url = process.env.API_BASE_URL;
-  if (!url) throw new Error("API_BASE_URL is not set");
+  if (!url) {
+    throw new Error("API_BASE_URL is not set");
+  }
   return url;
 }
 
