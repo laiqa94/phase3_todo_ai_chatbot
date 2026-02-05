@@ -59,73 +59,54 @@ class TodoAgent:
 
         tool_class = self.tools_registry[tool_name]
 
-        # In development mode, some tools might fail due to missing database setup
-        # Provide mock responses for common operations
         try:
-            return tool_class.execute(tool_args, self.session)
+            result = tool_class.execute(tool_args, self.session)
+            return result
         except Exception as e:
-            # If the tool execution fails (e.g., due to database not set up properly in dev),
-            # return a mock response for development purposes
-            if tool_name == "add_task":
-                return {
-                    "success": True,
-                    "task_id": 999,
-                    "title": tool_args.get("title", "Mock Task"),
-                    "message": f"Task '{tool_args.get('title', 'Mock Task')}' has been added successfully (mock response)"
-                }
-            elif tool_name == "list_tasks":
-                return {
-                    "success": True,
-                    "task_count": 2,
-                    "status_filter": tool_args.get("status", "all"),
-                    "tasks": [
-                        {"id": 1, "title": "Sample Task 1", "completed": False, "priority": "medium"},
-                        {"id": 2, "title": "Sample Task 2", "completed": True, "priority": "high"}
-                    ],
-                    "message": "Found 2 tasks (mock response)"
-                }
-            elif tool_name == "complete_task":
-                return {
-                    "success": True,
-                    "task_id": tool_args.get("task_id", 1),
-                    "title": f"Task {tool_args.get('task_id', 1)}",
-                    "completed": tool_args.get("completed", True),
-                    "message": f"Task {tool_args.get('task_id', 1)} marked as {'completed' if tool_args.get('completed', True) else 'pending'} (mock response)"
-                }
-            elif tool_name == "delete_task":
-                return {
-                    "success": True,
-                    "task_id": tool_args.get("task_id", 1),
-                    "message": f"Task {tool_args.get('task_id', 1)} has been deleted successfully (mock response)"
-                }
-            elif tool_name == "update_task":
-                return {
-                    "success": True,
-                    "task_id": tool_args.get("task_id", 1),
-                    "title": tool_args.get("title", "Updated Task"),
-                    "updated_fields": list(set(tool_args.keys()) - {"user_id", "task_id"}),
-                    "message": f"Task {tool_args.get('task_id', 1)} has been updated successfully (mock response)"
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": str(e),
-                    "message": f"Tool execution failed: {str(e)}. This is likely due to development environment setup."
-                }
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Tool execution failed: {str(e)}"
+            }
 
     def _format_system_prompt(self) -> str:
         """Format the system prompt for the agent"""
         return """
-        You are an AI assistant for a todo application. Your purpose is to help users manage their tasks through natural language.
+        You are a helpful and intelligent AI assistant for a todo application. You help users manage their tasks efficiently.
 
-        You can:
-        1. Add new tasks using the add_task tool
-        2. List existing tasks using the list_tasks tool
-        3. Mark tasks as completed or pending using the complete_task tool
-        4. Delete tasks using the delete_task tool
-        5. Update task details using the update_task tool
+        PERSONALITY:
+        - Be friendly, professional, and encouraging
+        - Use a conversational tone
+        - Show enthusiasm when helping with tasks
+        - Be patient and understanding
 
-        Always be helpful, friendly, and confirm actions with users.
+        CORE RESPONSIBILITIES:
+        1. Help users create, view, update, and manage their tasks
+        2. Provide clear confirmations for all actions
+        3. Ask clarifying questions when requests are unclear
+        4. Give helpful suggestions for task management
+
+        AVAILABLE TOOLS (use when appropriate):
+        - add_task: Create new tasks with title, description, priority, due date
+        - list_tasks: Show user's tasks (all, completed, or pending)
+        - complete_task: Mark tasks as done or undone
+        - update_task: Modify existing task details
+        - delete_task: Remove tasks from the list
+
+        RESPONSE GUIDELINES:
+        - Always acknowledge what the user wants to do
+        - Use tools when users mention specific task actions
+        - Provide helpful context and next steps
+        - If unsure, ask for clarification politely
+        - Celebrate completed tasks with positive reinforcement
+        - Suggest productivity tips when appropriate
+
+        EXAMPLES OF GOOD RESPONSES:
+        - "I'd be happy to help you add that task! Let me create it for you."
+        - "Great job completing that task! What would you like to work on next?"
+        - "I can show you your tasks. Would you like to see all tasks or just the pending ones?"
+        
+        Remember: You're here to make task management easier and more enjoyable for users!
         """
 
     def process_message(self,

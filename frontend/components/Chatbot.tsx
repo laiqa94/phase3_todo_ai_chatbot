@@ -15,7 +15,24 @@ const Chatbot = ({ userId }: { userId: number }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Load message history from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem(`chat_history_${userId}`);
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+  }, [userId]);
+
+  // Save messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`chat_history_${userId}`, JSON.stringify(messages));
+    }
+  }, [messages, userId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,11 +42,50 @@ const Chatbot = ({ userId }: { userId: number }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert('Voice input not supported in your browser');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    // Add user message to chat
     const userMessage: Message = {
       id: Date.now(),
       role: 'user',
@@ -42,27 +98,21 @@ const Chatbot = ({ userId }: { userId: number }) => {
     setIsLoading(true);
 
     try {
-      // Send message to backend
       const request: ChatRequest = {
         message: inputValue,
       };
 
       const response = await sendChatMessage(userId, request);
-      console.log('Chatbot: Received response from API:', response);
 
-      // Add AI response to chat
       const aiMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
         content: response.response,
         timestamp: new Date().toISOString(),
       };
-      console.log('Chatbot: Adding AI message:', aiMessage);
 
-      // Prepare all messages to be added at once (AI response + tool results)
       const newMessages = [aiMessage];
 
-      // If tools were executed, add their results as well
       if (response.tool_results && response.tool_results.length > 0) {
         response.tool_results.forEach((toolResult) => {
           if (toolResult.result?.message) {
@@ -73,21 +123,14 @@ const Chatbot = ({ userId }: { userId: number }) => {
               timestamp: new Date().toISOString(),
             };
             newMessages.push(toolResultMessage);
-            console.log('Chatbot: Prepared tool result message:', toolResultMessage);
           }
         });
       }
 
-      // Update state with all new messages at once
-      setMessages(prev => {
-        const updatedMessages = [...prev, ...newMessages];
-        console.log('Chatbot: Messages after adding AI response and tool results:', updatedMessages);
-        return updatedMessages;
-      });
+      setMessages(prev => [...prev, ...newMessages]);
     } catch (error) {
       console.error('Error sending message:', error);
 
-      // Add error message to chat
       const errorMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
@@ -98,6 +141,13 @@ const Chatbot = ({ userId }: { userId: number }) => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const clearHistory = () => {
+    if (confirm('Are you sure you want to clear chat history?')) {
+      setMessages([]);
+      localStorage.removeItem(`chat_history_${userId}`);
     }
   };
 
@@ -125,16 +175,35 @@ const Chatbot = ({ userId }: { userId: number }) => {
         <div className="fixed inset-4 sm:bottom-6 sm:right-6 sm:inset-auto sm:w-96 sm:h-[500px] bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col z-50">
           {/* Header */}
           <div className="bg-blue-600 text-white p-3 sm:p-4 rounded-t-lg flex justify-between items-center">
-            <h3 className="font-semibold text-sm sm:text-base">AI Todo Assistant</h3>
-            <button
-              onClick={toggleChat}
-              className="text-white hover:text-gray-200 p-1 rounded-md hover:bg-blue-700 transition-colors"
-              aria-label="Close chat"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm sm:text-base">AI Todo Assistant</h3>
+              {messages.length > 0 && (
+                <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{messages.length}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  className="text-white/80 hover:text-white p-1 rounded-md hover:bg-blue-700 transition-colors"
+                  aria-label="Clear history"
+                  title="Clear chat history"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={toggleChat}
+                className="text-white hover:text-gray-200 p-1 rounded-md hover:bg-blue-700 transition-colors"
+                aria-label="Close chat"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -178,10 +247,11 @@ const Chatbot = ({ userId }: { userId: number }) => {
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-gray-200 text-gray-800 max-w-xs px-3 py-2 rounded-lg">
-                      <div className="flex space-x-2">
+                      <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-75"></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <span className="text-xs text-gray-600 ml-2">Typing...</span>
                       </div>
                     </div>
                   </div>
@@ -202,6 +272,22 @@ const Chatbot = ({ userId }: { userId: number }) => {
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isLoading}
               />
+              <button
+                type="button"
+                onClick={toggleVoiceInput}
+                disabled={isLoading}
+                className={`p-2 rounded-lg transition-colors ${
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } disabled:opacity-50`}
+                aria-label="Voice input"
+                title={isListening ? 'Stop recording' : 'Start voice input'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                </svg>
+              </button>
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}

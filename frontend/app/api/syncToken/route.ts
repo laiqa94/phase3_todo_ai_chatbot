@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { token, userId } = await req.json();
+    const text = await req.text();
+    if (!text || text.trim() === '') {
+      return NextResponse.json({ error: "Empty request body" }, { status: 400 });
+    }
+    
+    const { token, userId } = JSON.parse(text);
 
     if (!token) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
@@ -34,6 +39,6 @@ export async function POST(req: Request) {
     return response;
   } catch (error) {
     console.error("Token sync error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Invalid JSON or server error" }, { status: 500 });
   }
 }
