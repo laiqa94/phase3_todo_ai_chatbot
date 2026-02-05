@@ -21,12 +21,37 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
 
     let transformedPath = `/${path.join("/")}`;
     
+    // Handle chat endpoints
     if (transformedPath.match(/^\/\d+\/chat$/)) {
       transformedPath = transformedPath.replace(/^\/(\d+)\/chat$/, '/api/v1/$1/chat');
-    } else if (transformedPath.startsWith('/api/me/')) {
-      transformedPath = transformedPath.replace('/api/me/', '/api/v1/');
-    } else if (transformedPath.startsWith('/api/')) {
+    }
+    // Handle new conversation endpoints
+    else if (transformedPath.match(/^\/\d+\/new_conversation$/)) {
+      transformedPath = transformedPath.replace(/^\/(\d+)\/new_conversation$/, '/api/v1/$1/new_conversation');
+    }
+    // Handle conversation history endpoints
+    else if (transformedPath.match(/^\/conversations\/\d+\/\d+$/)) {
+      transformedPath = `/api/v1${transformedPath}`;
+    }
+    // Handle /me endpoint
+    else if (transformedPath === '/me') {
+      transformedPath = '/api/v1/auth/me';
+    }
+    // Handle task endpoints
+    else if (transformedPath.startsWith('/tasks')) {
+      transformedPath = `/api/v1${transformedPath}`;
+    }
+    // Handle auth endpoints (already have /api/v1 prefix)
+    else if (transformedPath.startsWith('/api/v1/auth')) {
+      // Keep as is
+    }
+    // Handle other /api/ endpoints
+    else if (transformedPath.startsWith('/api/')) {
       transformedPath = transformedPath.replace('/api/', '/api/v1/');
+    }
+    // Default: add /api/v1 prefix if not present
+    else if (!transformedPath.startsWith('/api/v1/')) {
+      transformedPath = `/api/v1${transformedPath}`;
     }
 
     const headers: Record<string, string> = {

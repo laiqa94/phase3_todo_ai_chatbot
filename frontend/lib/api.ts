@@ -147,3 +147,83 @@ export async function getCurrentUser(): Promise<{ id: number; email: string; }> 
     method: 'GET',
   });
 }
+
+/**
+ * Task management functions
+ */
+export interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+}
+
+export interface TaskCreate {
+  title: string;
+  description?: string;
+}
+
+export interface TaskUpdate {
+  title?: string;
+  description?: string;
+  completed?: boolean;
+}
+
+/**
+ * Create a new task
+ */
+export async function createTask(task: TaskCreate): Promise<Task> {
+  return apiFetch<Task>(`/tasks/`, {
+    method: 'POST',
+    body: task,
+  });
+}
+
+/**
+ * Get all tasks
+ */
+export async function getTasks(): Promise<Task[]> {
+  return apiFetch<Task[]>(`/tasks`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Get a specific task
+ */
+export async function getTask(taskId: number): Promise<Task> {
+  return apiFetch<Task>(`/tasks/${taskId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Update a task
+ */
+export async function updateTask(taskId: number, task: TaskUpdate): Promise<Task> {
+  return apiFetch<Task>(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: task,
+  });
+}
+
+/**
+ * Delete a task
+ */
+export async function deleteTask(taskId: number): Promise<void> {
+  return apiFetch<void>(`/tasks/${taskId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Toggle task completion status
+ */
+export async function toggleTask(taskId: number): Promise<Task> {
+  return apiFetch<Task>(`/tasks/${taskId}/toggle`, {
+    method: 'PATCH',
+  });
+}
