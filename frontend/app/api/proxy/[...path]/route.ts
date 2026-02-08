@@ -45,19 +45,19 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
     else if (transformedPath === '/me') {
       transformedPath = '/api/v1/auth/me';
     }
-    // Handle /me/tasks endpoint (keep /me/tasks prefix, will be handled by backend)
+    // Handle /me/tasks endpoint (transform to /api/v1/tasks)
     else if (transformedPath.startsWith('/me/tasks')) {
-      // Don't strip /me, keep as is -> /api/v1/me/tasks
-      transformedPath = `/api/v1${transformedPath}`;
+      // Transform /me/tasks to /api/v1/tasks
+      transformedPath = `/api/v1/tasks`;
     }
     // Handle /tasks endpoint
     else if (transformedPath.startsWith('/tasks')) {
       transformedPath = `/api/v1${transformedPath}`;
     }
-    // Handle /api/v1/ endpoints (already have /api/v1 prefix - strip and re-add)
+    // Handle /api/v1/ endpoints (already have /api/v1 prefix - keep as is)
     else if (transformedPath.startsWith('/api/v1/')) {
-      // Strip /api/v1 and re-add to avoid double prefix
-      transformedPath = `/api/v1${transformedPath.slice(6)}`;
+      // Keep as is - already has correct prefix
+      transformedPath = transformedPath;
     }
     // Handle /api/ endpoints (add /v1/ prefix)
     else if (transformedPath.startsWith('/api/')) {
