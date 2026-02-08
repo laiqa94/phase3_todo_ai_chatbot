@@ -14,6 +14,15 @@ from ..middleware.jwt_middleware import JWTService
 from ..agent.agent import TodoAgent
 from ..database.repositories import ConversationRepository, MessageRepository
 
+# Import task models and services from main app
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from app.core.db import get_session as get_main_session
+from app.models.task import Task, TaskCreate, TaskUpdate
+from app.services.task import create_task, get_tasks_by_owner, get_task_by_id, update_task, delete_task, toggle_task_completion
+from app.models.user import User
+
 
 router = APIRouter()
 security = HTTPBearer()
@@ -293,3 +302,107 @@ async def get_conversation_history(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving conversation: {str(e)}"
         )
+
+
+# Task endpoints for /me/tasks
+class TaskCreateRequest(BaseModel):
+    """Request model for creating a task"""
+    title: str
+    description: Optional[str] = None
+
+
+class TaskUpdateRequest(BaseModel):
+    """Request model for updating a task"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    completed: Optional[bool] = None
+
+
+@router.get("/me/tasks")
+def get_my_tasks(
+    skip: int = 0,
+    limit: int = 100,
+    completed: Optional[bool] = None,
+    authenticated_user_id: int = Depends(JWTService.get_current_user_id)
+):
+    """Get tasks for the authenticated user"""
+    try:
+        session = get_main_session()
+        tasks = get_tasks_by_owner(session=session, owner_id=authenticated_user_id, skip=skip, limit=limit)
+        return {"items": tasks}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching tasks: {str(e)}")
+
+
+@router.post("/me/tasks")
+def create_my_task(
+    request: TaskCreateRequest,
+    authenticated_user_id: int = Depends(JWTService.get_current_user_id)
+):
+    """Create a new task for the authenticated user"""
+    try:
+        session = get_main_session()
+        task_create = TaskCreate(title=request.title, description=request.description)
+        task = create_task(session=session, task_create=task_create, owner_id=authenticated_user_id)
+        return task
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating task: {str(e)}")
+
+
+@router.put("/me/tasks/{task_id}")
+def update_my_task(
+    task_id: int,
+    request: TaskUpdateRequest,
+    authenticated_user_id: int = Depends(JWTService.get_current_user_id)
+):
+    """Update a task for the authenticated user"""
+    try:
+        session = get_main_session()
+        task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        task_update = TaskUpdate(**request.model_dump(exclude_unset=True))
+        updated = update_task(session=session, db_task=task, task_update=task_update)
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating task: {str(e)}")
+
+
+@router.delete("/me/tasks/{task_id}")
+def delete_my_task(
+    task_id: int,
+    authenticated_user_id: int = Depends(JWTService.get_current_user_id)
+):
+    """Delete a task for the authenticated user"""
+    try:
+        session = get_main_session()
+        task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        delete_task(session=session, db_task=task)
+        return {"message": "Task deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting task: {str(e)}")
+
+
+@router.patch("/me/tasks/{task_id}/complete")
+def complete_my_task(
+    task_id: int,
+    authenticated_user_id: int = Depends(JWTService.get_current_user_id)
+):
+    """Toggle task completion for the authenticated user"""
+    try:
+        session = get_main_session()
+        task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        updated = toggle_task_completion(session=session, db_task=task)
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error toggling task: {str(e)}")

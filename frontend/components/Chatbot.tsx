@@ -171,16 +171,34 @@ const Chatbot = ({ userId }: { userId: number }) => {
       timestamp: new Date().toISOString(),
     };
 
+    const messageToSend = inputValue; // Capture the message before clearing
+
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
     try {
+      console.log('Sending message to chatbot:', messageToSend);
+      
       const request: ChatRequest = {
-        message: inputValue,
+        message: messageToSend,
       };
 
       const response = await sendChatMessage(userId, request);
+      
+      console.log('Received chatbot response:', response);
+
+      if (!response || !response.response) {
+        console.warn('Empty response received from chatbot');
+        const emptyMessage: Message = {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: 'I did not receive a proper response. Please try again.',
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, emptyMessage]);
+        return;
+      }
 
       const aiMessage: Message = {
         id: Date.now() + 1,
@@ -192,6 +210,7 @@ const Chatbot = ({ userId }: { userId: number }) => {
       const newMessages = [aiMessage];
 
       if (response.tool_results && response.tool_results.length > 0) {
+        console.log('Tool results received:', response.tool_results);
         response.tool_results.forEach((toolResult) => {
           if (toolResult.result?.message) {
             const toolResultMessage: Message = {
@@ -212,7 +231,7 @@ const Chatbot = ({ userId }: { userId: number }) => {
       const errorMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}. Please try again.`,
         timestamp: new Date().toISOString(),
       };
 

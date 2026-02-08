@@ -116,7 +116,7 @@ export function TasksClient({
     if (initialQuery) qs.set("q", initialQuery);
 
     try {
-      const next = await apiFetch<{ items: Task[] }>(`/api/proxy/api/me/tasks?${qs.toString()}`, {
+      const next = await apiFetch<{ items: Task[] }>(`/api/me/tasks?${qs.toString()}`, {
         method: "GET",
       });
       setTasks(next.items ?? []);
@@ -164,7 +164,7 @@ export function TasksClient({
     setTasks((prev) => [optimistic, ...prev]);
 
     try {
-      const created = await apiFetch<Task>("/api/proxy/api/me/tasks", {
+      const created = await apiFetch<Task>("/api/me/tasks", {
         method: "POST",
         body: draft,
       });
@@ -185,7 +185,7 @@ export function TasksClient({
     );
 
     try {
-      const updated = await apiFetch<Task>(`/api/proxy/api/me/tasks/${taskId}/complete`, {
+      const updated = await apiFetch<Task>(`/api/me/tasks/${taskId}/complete`, {
         method: "PATCH",
         body: { completed: nextCompleted },
       });
@@ -201,7 +201,7 @@ export function TasksClient({
     setTasks((list) => list.filter((t) => t.id !== taskId));
 
     try {
-      await apiFetch<void>(`/api/proxy/api/me/tasks/${encodeURIComponent(taskId)}`, {
+      await apiFetch<void>(`/api/me/tasks/${encodeURIComponent(taskId)}`, {
         method: "DELETE",
       });
       toast.success("Task deleted.");
@@ -219,7 +219,7 @@ export function TasksClient({
     setTasks((list) => list.map((t) => (t.id === taskId ? { ...t, ...draft } : t)));
 
     try {
-      const updated = await apiFetch<Task>(`/api/proxy/api/me/tasks/${encodeURIComponent(taskId)}`, {
+      const updated = await apiFetch<Task>(`/api/me/tasks/${encodeURIComponent(taskId)}`, {
         method: "PUT",
         body: draft,
       });

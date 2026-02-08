@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     )
 
     # Include routers
-    app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
+    app.include_router(chat_router, prefix="/api/v1")
 
     # Create database tables on startup
     @app.on_event("startup")

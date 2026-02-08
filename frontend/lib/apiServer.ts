@@ -29,7 +29,15 @@ function getTaskBodyStringProp(body: unknown, prop: keyof TaskCreateInput, defau
 }
 
 function baseUrl() {
-  const url = process.env.API_BASE_URL;
+  // Check for server-side API_BASE_URL first
+  let url = process.env.API_BASE_URL;
+  
+  // Fall back to NEXT_PUBLIC_API_BASE_URL for server-side usage
+  // (this works because Next.js includes NEXT_PUBLIC_* vars in server build)
+  if (!url) {
+    url = process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  
   if (!url) {
     // In both development and production, provide fallback for missing API_BASE_URL
     // This allows the app to work without a backend for demo purposes
@@ -152,9 +160,10 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
         });
       } catch (fetchError) {
         // If the fetch itself fails (network error), log and return mock data
-        console.error(`Network error when fetching ${fullUrl}:`, fetchError);
+        console.debug(`Network error when fetching ${fullUrl}:`, fetchError);
         console.log(`Returning mock data for path: ${path} after network error`);
 
+        // Return mock data based on path
         if (path === '/api/me' || path.includes('/api/v1/users/me')) {
           return {
             id: 1,
@@ -176,10 +185,10 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
               updatedAt: new Date().toISOString(),
               userId: 1
             };
-            return newTask as unknown as T;
+            return { items: [newTask] } as unknown as T;
           } else {
             // Mock for task retrieval
-            return [
+            const mockTasks = [
               {
                 id: 1,
                 title: "Sample Task",
@@ -198,12 +207,13 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
                 updatedAt: new Date().toISOString(),
                 userId: 1
               }
-            ] as unknown as T;
+            ];
+            return { items: mockTasks } as unknown as T;
           }
         }
 
         // Generic mock for other paths
-        return {} as unknown as T;
+        return { items: [] } as unknown as T;
       }
 
       if (res.status === 204) return undefined as T;
@@ -238,10 +248,10 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
               updatedAt: new Date().toISOString(),
               userId: 1
             };
-            return newTask as unknown as T;
+            return { items: [newTask] } as unknown as T;
           } else {
             // Mock for task retrieval
-            return [
+            const mockTasks = [
               {
                 id: 1,
                 title: "Sample Task",
@@ -260,18 +270,19 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
                 updatedAt: new Date().toISOString(),
                 userId: 1
               }
-            ] as unknown as T;
+            ];
+            return { items: mockTasks } as unknown as T;
           }
         }
 
         // Generic mock for other paths
-        return {} as unknown as T;
+        return { items: [] } as unknown as T;
       }
 
       return payload as T;
     } catch (error) {
       // Final catch-all for any other errors in development
-      console.error(`Server API call failed for path ${path}:`, error);
+      console.debug(`Server API call failed for path ${path}:`, error);
       console.log(`Final fallback: Returning mock data for path: ${path} after error`);
 
       if (path === '/api/me' || path.includes('/api/v1/users/me')) {
@@ -295,10 +306,10 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
             updatedAt: new Date().toISOString(),
             userId: 1
           };
-          return newTask as unknown as T;
+          return { items: [newTask] } as unknown as T;
         } else {
           // Mock for task retrieval
-          return [
+          const mockTasks = [
             {
               id: 1,
               title: "Sample Task",
@@ -317,12 +328,13 @@ export async function apiFetchServer<T>(path: string, options: ApiFetchOptions =
               updatedAt: new Date().toISOString(),
               userId: 1
             }
-          ] as unknown as T;
+          ];
+          return { items: mockTasks } as unknown as T;
         }
       }
 
       // Generic mock for other paths
-      return {} as unknown as T;
+      return { items: [] } as unknown as T;
     }
   } else {
     // Production mode - handle missing API_BASE_URL gracefully

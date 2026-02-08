@@ -35,7 +35,7 @@ try:
     if backend_dir not in sys.path:
         sys.path.insert(0, backend_dir)
     from ai_chatbot.api.chat_endpoint import router as chat_router
-    app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
+    app.include_router(chat_router, prefix="/api/v1")
     print("Chat router included")
     print(f"Routes after chat: {len(app.routes)}")
 except ImportError as e:
