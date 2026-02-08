@@ -20,12 +20,14 @@ function baseUrl() {
 async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> }) {
   try {
     const { path } = await ctx.params;
+    console.log(`[Proxy] DEBUG: Received path array:`, path);
     let requestBody = '';
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       requestBody = await req.text();
     }
 
     let transformedPath = `/${path.join("/")}`;
+    console.log(`[Proxy] DEBUG: Initial transformedPath:`, transformedPath);
     
     // Handle chat endpoints
     if (transformedPath.match(/^\/\d+\/chat$/)) {
@@ -52,9 +54,10 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
     else if (transformedPath.startsWith('/tasks')) {
       transformedPath = `/api/v1${transformedPath}`;
     }
-    // Handle /api/v1/ endpoints (already have /api/v1 prefix - keep as is)
+    // Handle /api/v1/ endpoints (already have /api/v1 prefix - strip and re-add)
     else if (transformedPath.startsWith('/api/v1/')) {
-      // Keep as is, don't add another /v1/
+      // Strip /api/v1 and re-add to avoid double prefix
+      transformedPath = `/api/v1${transformedPath.slice(6)}`;
     }
     // Handle /api/ endpoints (add /v1/ prefix)
     else if (transformedPath.startsWith('/api/')) {

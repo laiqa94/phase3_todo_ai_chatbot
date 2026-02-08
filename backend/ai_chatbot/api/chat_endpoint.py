@@ -323,11 +323,11 @@ def get_my_tasks(
     skip: int = 0,
     limit: int = 100,
     completed: Optional[bool] = None,
+    session: Session = Depends(get_main_session),
     authenticated_user_id: int = Depends(JWTService.get_current_user_id)
 ):
     """Get tasks for the authenticated user"""
     try:
-        session = get_main_session()
         tasks = get_tasks_by_owner(session=session, owner_id=authenticated_user_id, skip=skip, limit=limit)
         return {"items": tasks}
     except Exception as e:
@@ -337,11 +337,11 @@ def get_my_tasks(
 @router.post("/me/tasks")
 def create_my_task(
     request: TaskCreateRequest,
+    session: Session = Depends(get_main_session),
     authenticated_user_id: int = Depends(JWTService.get_current_user_id)
 ):
     """Create a new task for the authenticated user"""
     try:
-        session = get_main_session()
         task_create = TaskCreate(title=request.title, description=request.description)
         task = create_task(session=session, task_create=task_create, owner_id=authenticated_user_id)
         return task
@@ -353,11 +353,11 @@ def create_my_task(
 def update_my_task(
     task_id: int,
     request: TaskUpdateRequest,
+    session: Session = Depends(get_main_session),
     authenticated_user_id: int = Depends(JWTService.get_current_user_id)
 ):
     """Update a task for the authenticated user"""
     try:
-        session = get_main_session()
         task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -373,11 +373,11 @@ def update_my_task(
 @router.delete("/me/tasks/{task_id}")
 def delete_my_task(
     task_id: int,
+    session: Session = Depends(get_main_session),
     authenticated_user_id: int = Depends(JWTService.get_current_user_id)
 ):
     """Delete a task for the authenticated user"""
     try:
-        session = get_main_session()
         task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -392,11 +392,11 @@ def delete_my_task(
 @router.patch("/me/tasks/{task_id}/complete")
 def complete_my_task(
     task_id: int,
+    session: Session = Depends(get_main_session),
     authenticated_user_id: int = Depends(JWTService.get_current_user_id)
 ):
     """Toggle task completion for the authenticated user"""
     try:
-        session = get_main_session()
         task = get_task_by_id(session=session, task_id=task_id, owner_id=authenticated_user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
