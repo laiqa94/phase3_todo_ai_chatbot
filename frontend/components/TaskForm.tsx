@@ -55,15 +55,15 @@ export function TaskForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="glass-card rounded-xl p-4 sm:p-6">
       <div className="grid gap-4 sm:gap-3">
         {/* Title - Full width on mobile */}
         <label className="grid gap-1">
-          <span className="text-sm font-medium text-zinc-700">Title</span>
+          <span className="text-sm font-medium text-white/90">Title</span>
           <input
             value={draft.title}
             onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-            className="h-10 sm:h-11 rounded-md border border-zinc-200 px-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="h-10 sm:h-11 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm px-3 text-sm sm:text-base text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
             placeholder="e.g., Pay rent"
           />
         </label>
@@ -71,21 +71,21 @@ export function TaskForm({
         {/* Due date and Priority - Stack on mobile, side by side on desktop */}
         <div className="grid gap-4 sm:gap-3 sm:grid-cols-2">
           <label className="grid gap-1">
-            <span className="text-sm font-medium text-zinc-700">Due date</span>
+            <span className="text-sm font-medium text-white/90">Due date</span>
             <input
               type="date"
               value={draft.dueDate ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, dueDate: e.target.value }))}
-              className="h-10 sm:h-11 rounded-md border border-zinc-200 px-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="h-10 sm:h-11 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm px-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent [color-scheme:dark]"
             />
           </label>
 
           <label className="grid gap-1">
-            <span className="text-sm font-medium text-zinc-700">Priority</span>
+            <span className="text-sm font-medium text-white/90">Priority</span>
             <select
               value={draft.priority ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value }))}
-              className="h-10 sm:h-11 rounded-md border border-zinc-200 px-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="h-10 sm:h-11 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm px-3 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
             >
               <option value="">Select priority</option>
               <option value="low">Low</option>
@@ -97,11 +97,11 @@ export function TaskForm({
 
         {/* Description - Full width */}
         <label className="grid gap-1">
-          <span className="text-sm font-medium text-zinc-700">Description</span>
+          <span className="text-sm font-medium text-white/90">Description</span>
           <textarea
             value={draft.description ?? ""}
             onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-            className="min-h-20 sm:min-h-24 rounded-md border border-zinc-200 px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+            className="min-h-20 sm:min-h-24 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm px-3 py-2 text-sm sm:text-base text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent resize-y"
             placeholder="Optional details"
             rows={3}
           />
@@ -113,7 +113,7 @@ export function TaskForm({
             <button
               type="button"
               onClick={onCancel}
-              className="h-10 sm:h-11 rounded-md border border-zinc-200 px-4 text-sm sm:text-base text-zinc-700 hover:bg-zinc-50 transition-colors order-2 sm:order-1"
+              className="h-10 sm:h-11 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm px-4 text-sm sm:text-base text-white hover:bg-white/20 transition-colors order-2 sm:order-1"
             >
               Cancel
             </button>
@@ -121,7 +121,7 @@ export function TaskForm({
           <button
             disabled={submitting}
             type="submit"
-            className="h-10 sm:h-11 rounded-md bg-zinc-900 px-4 text-sm sm:text-base text-white hover:bg-zinc-800 disabled:opacity-60 transition-colors order-1 sm:order-2 font-medium"
+            className="h-10 sm:h-11 rounded-md bg-gradient-to-r from-purple-500 to-pink-500 px-4 text-sm sm:text-base text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-60 transition-all order-1 sm:order-2 font-medium shadow-lg"
           >
             {submitting ? (
               <div className="flex items-center justify-center gap-2">
@@ -136,8 +136,8 @@ export function TaskForm({
       </div>
 
       {error ? (
-        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mt-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-200">{error}</p>
         </div>
       ) : null}
     </form>

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import type { User } from "@/types/user";
 
-export function Navbar({ user }: { user?: any }) {
+export function Navbar({ user }: { user?: User | null }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   async function logout() {
@@ -12,26 +13,26 @@ export function Navbar({ user }: { user?: any }) {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="glass-effect sticky top-0 z-40">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/dashboard" className="font-bold text-gray-900 text-xl">
+        <Link href="/dashboard" className="font-bold text-white text-xl">
           📝 Todo App
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/tasks" className="text-gray-600 hover:text-gray-900">
+          <Link href="/tasks" className="text-white/80 hover:text-white transition-colors">
             Tasks
           </Link>
 
           {user ? (
             <div className="flex items-center gap-4">
-              <span className="text-gray-600 text-sm">
+              <span className="text-white/80 text-sm">
                 {user.displayName || user.email}
               </span>
               <button
                 type="button"
                 onClick={() => void logout()}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/30 transition-colors border border-white/30"
               >
                 Logout
               </button>
@@ -39,7 +40,7 @@ export function Navbar({ user }: { user?: any }) {
           ) : (
             <Link
               href="/login"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-md hover:bg-white/30 transition-colors border border-white/30"
             >
               Login
             </Link>
@@ -49,7 +50,8 @@ export function Navbar({ user }: { user?: any }) {
         <button
           type="button"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          className="md:hidden p-2 rounded-md text-white hover:bg-white/20 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isMenuOpen ? (
@@ -62,11 +64,11 @@ export function Navbar({ user }: { user?: any }) {
       </div>
 
       {isMenuOpen && (
-        <div className="md:hidden border-t bg-white">
+        <div className="md:hidden glass-effect border-t border-white/20">
           <nav className="px-4 py-4 space-y-4">
             <Link 
               href="/tasks" 
-              className="block text-gray-600 hover:text-gray-900"
+              className="block text-white/80 hover:text-white transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Tasks
@@ -74,13 +76,13 @@ export function Navbar({ user }: { user?: any }) {
             
             {user ? (
               <div className="space-y-4">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-white/80">
                   {user.displayName || user.email}
                 </div>
                 <button
                   type="button"
                   onClick={() => void logout()}
-                  className="block w-full text-left bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                  className="block w-full text-left bg-white/20 text-white px-4 py-2 rounded-md hover:bg-white/30 transition-colors border border-white/30"
                 >
                   Logout
                 </button>
@@ -88,7 +90,7 @@ export function Navbar({ user }: { user?: any }) {
             ) : (
               <Link
                 href="/login"
-                className="block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                className="block bg-white/20 text-white px-4 py-2 rounded-md hover:bg-white/30 transition-colors border border-white/30"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Login

@@ -16,7 +16,7 @@ export function FilterTabs({
   ];
 
   return (
-    <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1">
+    <div className="inline-flex rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm p-1">
       {items.map((it) => (
         <button
           key={it.key}
@@ -24,8 +24,8 @@ export function FilterTabs({
           onClick={() => onChange?.(it.key)}
           className={
             it.key === value
-              ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm text-white"
-              : "rounded-md px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
+              ? "rounded-md bg-white/20 backdrop-blur-sm px-3 py-1.5 text-sm text-white border border-white/30"
+              : "rounded-md px-3 py-1.5 text-sm text-white/80 hover:bg-white/10 transition-colors"
           }
         >
           {it.label}

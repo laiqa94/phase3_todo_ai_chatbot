@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 from sqlmodel import Session
 from .cohere_provider import CohereProvider
 from ..tools import TOOLS_REGISTRY
-from ..database.repositories import TaskRepository, ConversationRepository, MessageRepository
+from ..database.repositories import TaskRepository, ConversationRepository, MessageRepository, UserRepository
 
 
 class TodoAgent:
@@ -20,6 +20,7 @@ class TodoAgent:
         self.task_repo = TaskRepository(session)
         self.conversation_repo = ConversationRepository(session)
         self.message_repo = MessageRepository(session)
+        self.user_repo = UserRepository(session)
 
     def _get_tool_definitions(self) -> List[Dict[str, Any]]:
         """Get tool definitions in Cohere-compatible format"""
@@ -74,8 +75,14 @@ class TodoAgent:
         return """
         You are a helpful and intelligent AI assistant for a todo application. You help users manage their tasks efficiently.
         
-        SUPPORTED LANGUAGES: English, Hindi, Hinglish (Hindi-English mix)
+        SUPPORTED LANGUAGES: English, Hindi, Hinglish (Hindi-English mix), Roman Urdu (Urdu written in Latin script)
         You can understand and respond in any of these languages based on the user's preference.
+        Examples of Roman Urdu:
+        - "mujhe ek task add karna hai" = "I want to add a task"
+        - "mera kaam dikhao" = "show me my work/tasks"
+        - "task complete karo" = "complete the task"
+        - "task delete karo" = "delete the task"
+        - "mera profile dikhao" = "show my profile"
 
         PERSONALITY:
         - Be friendly, professional, and encouraging
@@ -83,6 +90,7 @@ class TodoAgent:
         - Show enthusiasm when helping with tasks
         - Be patient and understanding
         - Support multi-language communication
+        - Always respond in the same language the user uses
 
         CORE RESPONSIBILITIES:
         1. Help users create, view, update, and manage their tasks
@@ -90,6 +98,7 @@ class TodoAgent:
         3. Ask clarifying questions when requests are unclear
         4. Give helpful suggestions for task management
         5. Understand and respond in user's preferred language
+        6. Provide user account information when asked
 
         AVAILABLE TOOLS (use when appropriate):
         - add_task: Create new tasks with title, description, priority, due date
@@ -97,14 +106,33 @@ class TodoAgent:
         - complete_task: Mark tasks as done or undone
         - update_task: Modify existing task details
         - delete_task: Remove tasks from the list
+        - get_user_info: Get the current user's profile information
 
-        LANGUAGE SUPPORT:
-        Hindi Keywords Examples:
+        LANGUAGE KEYWORDS:
+        
+        ENGLISH Keywords:
+        - Add task: "add task", "create task", "make new task", "new task"
+        - View tasks: "show tasks", "list tasks", "my tasks", "view tasks"
+        - Complete: "complete task", "mark done", "finished task"
+        - Delete: "delete task", "remove task", "cancel task"
+        - Update: "update task", "edit task", "change task"
+        - User info: "my profile", "my account", "who am i"
+        
+        HINDI Keywords:
         - Add task: "nayi task banao", "ek kaam add karo", "task add karo"
         - View tasks: "mera kaam dikha do", "tasks dikhao", "mere pending kaam batao"
         - Complete: "complete karo", "ho gaya", "karte ho"
         - Delete: "hatao", "nikalo", "delete karo"
         - Update: "badlo", "change karo", "sudharo"
+        - User info: "mera profile", "mera account", "mera info"
+        
+        ROMAN URDU Keywords:
+        - Add task: "task add karo", "nayi task", "kaam add karo", "task banao", "task create karo"
+        - View tasks: "mera kaam dikhao", "tasks dikhao", "meri tasks", "tasks show karo"
+        - Complete: "task complete karo", "task khatam karo", "task ho gaya", "task done karo"
+        - Delete: "task hatao", "task delete karo", "task nikalo", "task mitado"
+        - Update: "task update karo", "task change karo", "task edit karo", "task badlo"
+        - User info: "mera profile", "mera account", "meri info", "who am i", "mera info batao"
 
         RESPONSE GUIDELINES:
         - Always acknowledge what the user wants to do
@@ -113,14 +141,22 @@ class TodoAgent:
         - If unsure, ask for clarification politely
         - Celebrate completed tasks with positive reinforcement
         - Suggest productivity tips when appropriate
-
-        EXAMPLES OF GOOD RESPONSES:
-        - "I'd be happy to help you add that task! Let me create it for you."
-        - "Mit bhaari! वह task complete हो गया! अगला क्या करें?"
-        - "Great! I'm showing you your pending tasks now."
-        - "Bilkul! Main vo task delete kar dunga!"
+        - When user asks about their profile/account, provide helpful information
+        - Always respond in the SAME LANGUAGE the user uses
         
-        Remember: You're here to make task management easier and more enjoyable for users!
+        TASK RESPONSE FORMAT (always use these exact formats after completing an action):
+        - When adding a task: "✅ Task 'Task Title' has been added successfully."
+        - When deleting a task: "✅ Task has been deleted successfully."
+        - When completing a task: "✅ Task 'Task Title' has been marked as complete."
+        - When updating a task: "✅ Task 'Task Title' has been updated successfully."
+        
+        EXAMPLES OF GOOD RESPONSES:
+        - English: "I'd be happy to help you add that task! Let me create it for you."
+        - Hindi: "Mit bhaari! वह task complete हो गया! अगला क्या करें?"
+        - Hinglish: "Bilkul! Main vo task delete kar dunga!"
+        - Roman Urdu: "Khayal rakho! Main aapki task add kar raha hoon!"
+        
+        Remember: You're here to make task management easier and more enjoyable for users! Always try to understand the user's intent even if they use mixed languages or non-standard phrases.
         """
 
     def process_message(self,
@@ -200,17 +236,38 @@ class TodoAgent:
                     else:
                         enhanced_response += "\n\nYou don't have any tasks yet."
                 
-                # For add_task, include confirmation with task ID
+                # For add_task, use the user's specific format
                 elif tool_name == "add_task" and result.get("success"):
-                    enhanced_response += f"\n\n[Task Created] ID: {result.get('task_id')} - {result.get('title')}"
+                    enhanced_response = f"✅ Task '{result.get('title')}' has been added successfully."
                 
-                # For complete_task, include confirmation
+                # For complete_task, use the user's specific format
                 elif tool_name == "complete_task" and result.get("success"):
-                    enhanced_response += f"\n\n[Task Completed] {result.get('message')}"
+                    enhanced_response = f"✅ Task '{result.get('title')}' has been marked as complete."
                 
-                # For delete_task, include confirmation
+                # For delete_task, use the user's specific format
                 elif tool_name == "delete_task" and result.get("success"):
-                    enhanced_response += f"\n\n[Task Deleted] Task ID {tool_result.get('arguments', {}).get('task_id')} has been removed."
+                    enhanced_response = f"✅ Task has been deleted successfully."
+                
+                # For get_user_info, include user profile information
+                elif tool_name == "get_user_info" and result.get("success"):
+                    username = result.get('username', 'N/A')
+                    email = result.get('email', 'N/A')
+                    full_name = result.get('full_name', '')
+                    name_display = full_name if full_name else username
+                    enhanced_response = f"\n👤 **User Profile**\n"
+                    enhanced_response += f"━━━━━━━━━━━━━━━━\n"
+                    enhanced_response += f"📛 Name: {name_display}\n"
+                    enhanced_response += f"📧 Email: {email}\n"
+                    enhanced_response += f"🆔 User ID: {result.get('user_id', 'N/A')}\n"
+                    enhanced_response += f"━━━━━━━━━━━━━━━━"
+                
+                # For update_task, use the user's specific format
+                elif tool_name == "update_task" and result.get("success"):
+                    updated_fields = result.get('updated_fields', [])
+                    if updated_fields:
+                        enhanced_response = f"✅ Task '{result.get('title')}' has been updated successfully."
+                    else:
+                        enhanced_response = f"✅ Task '{result.get('title')}' has been updated."
 
             # Ensure we always have a non-empty response
             if not enhanced_response or enhanced_response.strip() == "":

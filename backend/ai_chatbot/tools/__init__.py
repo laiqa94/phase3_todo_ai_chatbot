@@ -7,6 +7,7 @@ from .list_tasks import ListTasksTool
 from .complete_task import CompleteTaskTool
 from .delete_task import DeleteTaskTool
 from .update_task import UpdateTaskTool
+from .get_user_info import GetUserInfoTool
 
 # Registry of all available tools
 TOOLS_REGISTRY = {
@@ -15,6 +16,7 @@ TOOLS_REGISTRY = {
     CompleteTaskTool.name(): CompleteTaskTool,
     DeleteTaskTool.name(): DeleteTaskTool,
     UpdateTaskTool.name(): UpdateTaskTool,
+    GetUserInfoTool.name(): GetUserInfoTool,
 }
 
 __all__ = [
@@ -23,5 +25,6 @@ __all__ = [
     'CompleteTaskTool',
     'DeleteTaskTool',
     'UpdateTaskTool',
+    'GetUserInfoTool',
     'TOOLS_REGISTRY'
 ]

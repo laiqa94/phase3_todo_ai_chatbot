@@ -138,3 +138,25 @@ class MessageRepository:
         statement = select(Message).where(Message.conversation_id == conversation_id)
         statement = statement.order_by(Message.created_at.desc()).limit(limit)
         return self.session.exec(statement).all()
+
+
+class UserRepository:
+    """Repository for User operations"""
+
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        """Get a specific user by ID"""
+        statement = select(User).where(User.id == user_id)
+        return self.session.exec(statement).first()
+
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        """Get a specific user by email"""
+        statement = select(User).where(User.email == email)
+        return self.session.exec(statement).first()
+
+    def get_user_by_username(self, username: str) -> Optional[User]:
+        """Get a specific user by username"""
+        statement = select(User).where(User.username == username)
+        return self.session.exec(statement).first()
