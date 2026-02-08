@@ -43,7 +43,11 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
     else if (transformedPath === '/me') {
       transformedPath = '/api/v1/auth/me';
     }
-    // Handle task endpoints
+    // Handle task endpoints (remove /me prefix)
+    else if (transformedPath.startsWith('/me/tasks')) {
+      transformedPath = `/api/v1/tasks${transformedPath.replace('/me/tasks', '')}`;
+    }
+    // Handle /tasks endpoint
     else if (transformedPath.startsWith('/tasks')) {
       transformedPath = `/api/v1${transformedPath}`;
     }
@@ -76,17 +80,7 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
     const apiBaseUrl = baseUrl();
     
     if (!apiBaseUrl) {
-      // Return mock response when API is not configured
-      if (transformedPath.includes('/chat')) {
-        return NextResponse.json({
-          conversation_id: Math.floor(Math.random() * 10000),
-          response: "I can help you manage your tasks! Try asking me to add, list, or complete tasks.",
-          has_tools_executed: false,
-          tool_results: [],
-          message_id: Math.floor(Math.random() * 10000)
-        }, { status: 200 });
-      }
-      return NextResponse.json({ error: "API not configured" }, { status: 503 });
+      return NextResponse.json({ error: "API backend not configured. Please set API_BASE_URL or NEXT_PUBLIC_API_BASE_URL environment variable." }, { status: 503 });
     }
     
     try {
@@ -96,54 +90,39 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
         body: req.method === "GET" || req.method === "HEAD" ? undefined : requestBody,
       });
     } catch (fetchError) {
+      throw new Error(`Failed to connect to backend at ${apiBaseUrl}: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+    }
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      let errorDetail = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorJson.message || errorText;
+      } catch {}
+      
+      // For chat endpoints, try to return a helpful error response
       if (transformedPath.includes('/chat')) {
         return NextResponse.json({
-          conversation_id: Math.floor(Math.random() * 10000),
-          response: "I can help you manage your tasks! Try asking me to add, list, or complete tasks.",
+          conversation_id: 1,
+          response: `Sorry, I encountered an error: ${errorDetail}`,
           has_tools_executed: false,
           tool_results: [],
-          message_id: Math.floor(Math.random() * 10000)
-        }, { status: 200 });
+          message_id: null
+        }, { status: res.status });
       }
-      throw fetchError;
-    }
-
-    if (res.ok) {
-      const contentType = res.headers.get("content-type") ?? "";
-      if (contentType.includes("application/json")) {
-        const json = await res.json().catch(() => null);
-        return NextResponse.json(json, { status: res.status });
-      }
-      const text = await res.text();
-      return new NextResponse(text, { status: res.status });
-    }
-
-    if (res.status === 404 && transformedPath.includes('/chat')) {
-      let userMessage = '';
-      try {
-        const parsed = JSON.parse(requestBody);
-        userMessage = parsed.message || '';
-      } catch (e) {}
-
-      let mockResponse = "I can help you manage your tasks!";
-      const lowerMessage = userMessage.toLowerCase();
       
-      if (lowerMessage.includes('add') || lowerMessage.includes('create')) {
-        mockResponse = "I've created a task for you!";
-      } else if (lowerMessage.includes('list') || lowerMessage.includes('show')) {
-        mockResponse = "Here are your tasks:\n1. Sample task";
-      }
-
-      return NextResponse.json({
-        conversation_id: Math.floor(Math.random() * 10000),
-        response: mockResponse,
-        has_tools_executed: false,
-        tool_results: [],
-        message_id: Math.floor(Math.random() * 10000)
-      }, { status: 200 });
+      return NextResponse.json({ error: errorDetail }, { status: res.status });
     }
 
-    return NextResponse.json({}, { status: 200 });
+    // Handle successful response
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const json = await res.json().catch(() => null);
+      return NextResponse.json(json, { status: res.status });
+    }
+    const text = await res.text();
+    return new NextResponse(text, { status: res.status });
   } catch (error) {
     return NextResponse.json({
       message: "Proxy error occurred",
