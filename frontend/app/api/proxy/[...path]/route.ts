@@ -109,6 +109,19 @@ async function handler(req: Request, ctx: { params: Promise<{ path: string[] }> 
         ];
         return NextResponse.json({ items: mockTasks }, { status: 200 });
       }
+      
+      // In development, return mock response for chat endpoints when backend not configured
+      if (isDevelopment() && transformedPath.includes('/chat')) {
+        console.log(`[Proxy] Backend not configured, returning mock response for chat: ${transformedPath}`);
+        return NextResponse.json({
+          conversation_id: 1,
+          response: "I'm in development mode without a backend connection, but I can still help! I have limited functionality, but you can ask me about task management. What would you like to do?",
+          has_tools_executed: false,
+          tool_results: [],
+          message_id: null
+        }, { status: 200 });
+      }
+      
       return NextResponse.json({ error: "API backend not configured" }, { status: 503 });
     }
     
